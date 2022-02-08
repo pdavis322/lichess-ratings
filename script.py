@@ -36,7 +36,6 @@ def get_ratings(users, start=None, end=None):
         else:
             print(f'Lichess API returned error ' + str(response.status_code))
             sleep(61)
-            get_ratings(users, start, end)
     print('Found ratings')
     return ratings
 
