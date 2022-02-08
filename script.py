@@ -35,6 +35,7 @@ def get_ratings(users, start=None, end=None):
             print(f'Found {start} user ratings')
         else:
             print(f'Lichess API returned error ' + str(response.status_code))
+            # Sleep 61 seconds: API documentation says to wait 1 minute if we get response 429
             sleep(61)
     print('Found ratings')
     return ratings
@@ -48,7 +49,7 @@ def get_users(num_users):
     # Don't count the same user twice
     users = set()
     with open('/mnt/c/Users/peter/Downloads/lichess_db_standard_rated_2022-01.pgn/lichess_db_standard_rated_2022-01.pgn') as f:
-        for i, line in enumerate(f):
+        for line in f:
             if len(users) >= num_users:
                 break
             if line[0:7] == "[White " or line[0:7] == "[Black ":
