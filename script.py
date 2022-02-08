@@ -1,6 +1,7 @@
 import requests
-import time
+from time import sleep
 import numpy as np
+import matplotlib.pyplot as plt
 import re
 from dotenv import load_dotenv
 from os import getenv
@@ -14,11 +15,11 @@ headers = {
 users = 'radiant_blur'
 
 # Ratings: [(puzzle_rating, chess_rating)]
-ratings = {'classical': [], 'rapid': [], 'blitz': [], 'bullet': []}
-
-def get_ratings(users):
-    start, end = 0, len(users) if len(users) <= 300 else 300
-    while start == 0 or end < len(users):
+def get_ratings(users, start=None, end=None):
+    ratings = {'classical': [], 'rapid': [], 'blitz': [], 'bullet': []}
+    if not start:
+        start, end = 0, len(users) if len(users) <= 300 else 300
+    while start < len(users):
         response = requests.post('https://lichess.org/api/users', headers=headers, data=','.join(users[start:end]))
         if response.status_code == requests.codes.ok:
             response = response.json()
@@ -31,12 +32,15 @@ def get_ratings(users):
                         continue
                     ratings[time].append((puzzle, r['perfs'][time]['rating']))
             start, end = end, len(users) if len(users) - end <= 300 else end + 300
+            print(f'Found {start} user ratings')
         else:
-            print('wrong')
-            time.sleep(60)
-            get_ratings(users)
+            print(f'Lichess API returned error ' + str(response.status_code))
+            sleep(61)
+            get_ratings(users, start, end)
+    print('Found ratings')
+    return ratings
 
-# print(np.array([r[1] for r in ratings['blitz']]))   
+
 
 
 
@@ -53,7 +57,17 @@ def get_users(num_users):
                 if username not in users:
                     users.add(username)
     # Need to convert to list to go 300 users at a time for API
+    print('Collected list of users')
     return list(users)
 
-get_ratings(get_users(1000))
-#print(len(ratings['blitz']) + len(ratings['bullet']) + len(ratings['classical']) + len(ratings['rapid']))
+ratings = get_ratings(get_users(10000))
+# Sort by puzzle rating
+ratings['blitz'].sort(key=lambda x:x[0])
+# X axis is puzzle, y axis is game rating
+blitz_x = np.array([r[0] for r in ratings['blitz']])
+blitz_y = np.array([r[1] for r in ratings['blitz']])
+coef = np.polyfit(blitz_x, blitz_y, 1)
+print(coef)
+poly1d_fn = np.poly1d(coef) 
+plt.plot(blitz_x,blitz_y, 'yo', blitz_x, poly1d_fn(blitz_x), '--k') 
+plt.show()
