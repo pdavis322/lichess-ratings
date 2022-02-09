@@ -3,6 +3,7 @@ from time import sleep
 import numpy as np
 import matplotlib.pyplot as plt
 import re
+import dill
 from dotenv import load_dotenv
 from os import getenv
 load_dotenv()
@@ -12,11 +13,12 @@ headers = {
     'Content-Type': 'text-plain'
 }
 
-users = 'radiant_blur'
+
+
 
 # Ratings: [(puzzle_rating, chess_rating)]
-def get_ratings(users, start=None, end=None):
-    ratings = {'classical': [], 'rapid': [], 'blitz': [], 'bullet': []}
+def get_ratings(users, start=None, end=None, ratings=None):
+    ratings = {'classical': [], 'rapid': [], 'blitz': [], 'bullet': []} if not ratings else ratings
     if not start:
         start, end = 0, len(users) if len(users) <= 300 else 300
     while start < len(users):
@@ -45,11 +47,15 @@ def get_ratings(users, start=None, end=None):
 
 
 # Returns list of usernames
-def get_users(num_users):
+def get_users(num_users, start=0):
     # Don't count the same user twice
     users = set()
+    index = 0
     with open('/mnt/c/Users/peter/Downloads/lichess_db_standard_rated_2022-01.pgn/lichess_db_standard_rated_2022-01.pgn') as f:
         for line in f:
+            if index < start:
+                index += 1
+                continue
             if len(users) >= num_users:
                 break
             if line[0:7] == "[White " or line[0:7] == "[Black ":
@@ -60,7 +66,19 @@ def get_users(num_users):
     print('Collected list of users')
     return list(users)
 
-ratings = get_ratings(get_users(10000))
+ratings = None
+with open("ratings.dill", "rb") as f:
+    ratings = dill.load(f)
+ratings = get_ratings(get_users(10000, start=10000), ratings=ratings)
+with open("ratings2.dill", "wb") as f:
+    dill.dump(ratings, f)
+
+
+
+print(len(ratings['blitz']))
+print(len(ratings['bullet']))
+print(len(ratings['classical']))
+print(len(ratings['rapid']))
 # Sort by puzzle rating
 ratings['blitz'].sort(key=lambda x:x[0])
 # X axis is puzzle, y axis is game rating
