@@ -67,9 +67,11 @@ def get_users(num_users, start=0):
     return list(users)
 
 ratings = None
-with open("ratings.dill", "rb") as f:
+print('Reading previous ratings dict from file')
+with open("ratings2.dill", "rb") as f:
     ratings = dill.load(f)
-ratings = get_ratings(get_users(10000, start=10000), ratings=ratings)
+ratings = get_ratings(get_users(10000, start=20000), ratings=ratings)
+print('Writing ratings dict to file')
 with open("ratings2.dill", "wb") as f:
     dill.dump(ratings, f)
 
